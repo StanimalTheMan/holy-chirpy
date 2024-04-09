@@ -18,6 +18,8 @@ func main() {
 		Handler: corsMux,
 	}
 
+	mux.Handle("/", http.FileServer(http.Dir(".")))
+
 	// Start HTTP server
 	err := server.ListenAndServe()
 	if err != nil {
