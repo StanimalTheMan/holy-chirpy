@@ -1,30 +1,25 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"net/http"
 )
 
 func main() {
-	// Create a new http.ServeMux
-	mux := http.NewServeMux()
+	const filepathRoot = "."
+	const port = "8080"
 
-	// Wrap mux in custom middleware that adds CORS headers to response
+	mux := http.NewServeMux()
+	mux.Handle("/", http.FileServer(http.Dir(filepathRoot)))
 	corsMux := middlewareCors(mux)
 
-	// Create a new http.Server and use corsMux on handler
 	server := &http.Server{
-		Addr:    ":8080",
+		Addr:    ":" + port,
 		Handler: corsMux,
 	}
 
-	mux.Handle("/", http.FileServer(http.Dir(".")))
-
-	// Start HTTP server
-	err := server.ListenAndServe()
-	if err != nil {
-		fmt.Println("Error starting server:", err)
-	}
+	log.Printf("Serving files from %s on port: %s\n", filepathRoot, port)
+	log.Fatal(server.ListenAndServe())
 }
 
 func middlewareCors(next http.Handler) http.Handler {
