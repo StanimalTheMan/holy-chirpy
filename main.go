@@ -8,10 +8,14 @@ import (
 func main() {
 	const filepathRoot = "."
 	const port = "8080"
+	apiCfg := apiConfig{}
 
 	mux := http.NewServeMux()
-	mux.Handle("/app/*", http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot))))
+	fileServerHandler := http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot)))
+	mux.Handle("/app/*", apiCfg.middlewareMetricsInc(fileServerHandler))
 	mux.HandleFunc("/healthz", handlerReadiness)
+	mux.HandleFunc("/metrics", apiCfg.handlerSiteVisits)
+	mux.HandleFunc("/reset", apiCfg.handlerSiteVisitsReset)
 
 	corsMux := middlewareCors(mux)
 
