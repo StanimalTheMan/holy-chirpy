@@ -41,10 +41,10 @@ func postTweetHandler(w http.ResponseWriter, r *http.Request) {
 		w.Write(data)
 	} else {
 		type successReturnVals struct {
-			Valid bool `json:"valid"`
+			CleanedBody string `json:"cleaned_body"`
 		}
 		respBody := successReturnVals{
-			Valid: true,
+			CleanedBody: replaceBadWords(params.Body),
 		}
 		data, err := json.Marshal(respBody)
 		if err != nil {
