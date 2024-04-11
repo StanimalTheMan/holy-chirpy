@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
-	"strconv"
 	"sync"
 )
 
@@ -66,23 +65,18 @@ func (db *DB) GetChirps() ([]Chirp, error) {
 	return chirps, nil
 }
 
-func (db *DB) GetChirp(pathValue string) (Chirp, error) {
+func (db *DB) GetChirp(id int) (Chirp, error) {
 	dbStructure, err := db.loadDB()
 	if err != nil {
 		return Chirp{}, err
 	}
 
-	for _, chirp := range dbStructure.Chirps {
-		pathValueInt, err := strconv.Atoi(pathValue)
-		if err != nil {
-			return Chirp{}, err
-		}
-		if chirp.ID == pathValueInt {
-			return chirp, nil
-		}
+	chirp, ok := dbStructure.Chirps[id]
+	if !ok {
+		return Chirp{}, os.ErrNotExist
 	}
 
-	return Chirp{}, errors.New("chirp does not exist")
+	return chirp, nil
 }
 
 func (db *DB) createDB() error {
