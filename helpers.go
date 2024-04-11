@@ -1,20 +1,22 @@
 package main
 
 import (
-	"fmt"
 	"strings"
 )
 
-func replaceBadWords(msg string) string {
-	cleanedMsg := []string{}
+func getCleanedBody(msg string) string {
+	badWords := map[string]struct{}{
+		"kerfuffle": {},
+		"sharbert":  {},
+		"fornax":    {},
+	}
+
 	splitMsg := strings.Split(msg, " ")
-	for _, word := range splitMsg {
-		if strings.ToLower(word) == "kerfuffle" || strings.ToLower(word) == "sharbert" || strings.ToLower(word) == "fornax" {
-			cleanedMsg = append(cleanedMsg, "****")
-		} else {
-			cleanedMsg = append(cleanedMsg, word)
+	for i, word := range splitMsg {
+		normalizedWord := strings.ToLower(word)
+		if _, ok := badWords[normalizedWord]; ok {
+			splitMsg[i] = "****"
 		}
 	}
-	fmt.Println(cleanedMsg)
-	return strings.Join(cleanedMsg, " ")
+	return strings.Join(splitMsg, " ")
 }
