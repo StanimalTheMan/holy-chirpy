@@ -2,8 +2,11 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+
+	"github.com/StanimalTheMan/holy-chirpy/database"
 )
 
 func main() {
@@ -20,7 +23,8 @@ func main() {
 
 	mux.HandleFunc("GET /api/healthz", handlerReadiness)
 	mux.HandleFunc("GET /api/reset", apiCfg.handlerReset)
-	mux.HandleFunc("POST /api/validate_chirp", handlerChirpsValidate)
+	mux.HandleFunc("POST /api/chirps", handlerChirpsValidate)
+	mux.HandleFunc("GET /api/chirps", handleFetchChirps)
 
 	mux.HandleFunc("GET /admin/metrics", apiCfg.handlerMetrics)
 
@@ -41,10 +45,6 @@ func handlerChirpsValidate(w http.ResponseWriter, r *http.Request) {
 		Body string `json:"body"`
 	}
 
-	type returnVals struct {
-		CleanedBody string `json:"cleaned_body"`
-	}
-
 	decoder := json.NewDecoder(r.Body)
 	params := parameters{}
 	err := decoder.Decode(&params)
@@ -61,9 +61,42 @@ func handlerChirpsValidate(w http.ResponseWriter, r *http.Request) {
 
 	cleaned := getCleanedBody(params.Body)
 
-	respondWithJSON(w, http.StatusOK, returnVals{
-		CleanedBody: cleaned,
-	})
+	// respondWithJSON(w, http.StatusOK, returnVals{
+	// 	CleanedBody: cleaned,
+	// })
+	db, err := database.NewDB("database.json")
+
+	if err != nil {
+		fmt.Println("Err1")
+		respondWithError(w, http.StatusInternalServerError, "Server error")
+		return
+	}
+
+	chirp, err := db.CreateChirp(cleaned)
+
+	if err != nil {
+		fmt.Println("Err2")
+		respondWithError(w, http.StatusInternalServerError, "Server error")
+		return
+	}
+	fmt.Println("chirp", chirp)
+	respondWithJSON(w, http.StatusCreated, chirp)
+}
+
+func handleFetchChirps(w http.ResponseWriter, r *http.Request) {
+	db, err := database.NewDB("database.json")
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Server error")
+		return
+	}
+
+	chirps, err := db.GetChirps()
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Server")
+		return
+	}
+
+	respondWithJSON(w, http.StatusOK, chirps)
 }
 
 func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
