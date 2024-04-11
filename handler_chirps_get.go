@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"net/http"
 	"sort"
 )
@@ -25,4 +26,17 @@ func (cfg *apiConfig) handlerChirpsRetrieve(w http.ResponseWriter, r *http.Reque
 	})
 
 	respondWithJSON(w, http.StatusOK, chirps)
+}
+
+func (cfg *apiConfig) handlerChirpRetrieve(w http.ResponseWriter, r *http.Request) {
+	dbChirp, err := cfg.DB.GetChirp(r.PathValue("chirpID"))
+	if err != nil {
+		if err.Error() == errors.New("chirp does not exist").Error() {
+			respondWithError(w, http.StatusNotFound, "Chirp does not exist")
+			return
+		}
+		respondWithError(w, http.StatusInternalServerError, "Couldn't fetch chirp")
+		return
+	}
+	respondWithJSON(w, http.StatusOK, dbChirp)
 }
