@@ -13,8 +13,8 @@ type DB struct {
 }
 
 type DBStructure struct {
-	Chirps map[int]Chirp `json:"chirps"`
-	Users  map[int]User  `json:"users"`
+	Chirps map[int]Chirp   `json:"chirps"`
+	Users  map[string]User `json:"users"`
 }
 
 func NewDB(path string) (*DB, error) {
@@ -29,7 +29,7 @@ func NewDB(path string) (*DB, error) {
 func (db *DB) createDB() error {
 	dbStructure := DBStructure{
 		Chirps: map[int]Chirp{},
-		Users:  map[int]User{},
+		Users:  map[string]User{},
 	}
 	return db.writeDB(dbStructure)
 }
