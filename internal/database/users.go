@@ -1,36 +1,35 @@
 package database
 
 import (
-	"fmt"
+	"errors"
 	"os"
 )
 
 type User struct {
-	ID       int    `json:"id"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	ID             int    `json:"id"`
+	Email          string `json:"email"`
+	HashedPassword string `json:"hashed_password"`
 }
 
-func (db *DB) CreateUser(email, password string) (User, error) {
+var ErrAlreadyExists = errors.New("already exists")
+
+func (db *DB) CreateUser(email, hashedPassword string) (User, error) {
+	if _, err := db.GetUserByEmail(email); !errors.Is(err, os.ErrNotExist) {
+		return User{}, err
+	}
+
 	dbStructure, err := db.loadDB()
 	if err != nil {
 		return User{}, err
 	}
 
 	id := len(dbStructure.Users) + 1
-
-	// check that no 2 users can be created with same email address
-	isEmailUnique := checkValidEmail(email, dbStructure)
-	if !isEmailUnique {
-		return User{}, err
-	}
-
 	user := User{
-		ID:       id,
-		Email:    email,
-		Password: password,
+		ID:             id,
+		Email:          email,
+		HashedPassword: hashedPassword,
 	}
-	dbStructure.Users[email] = user
+	dbStructure.Users[id] = user
 
 	err = db.writeDB(dbStructure)
 	if err != nil {
@@ -40,27 +39,31 @@ func (db *DB) CreateUser(email, password string) (User, error) {
 	return user, nil
 }
 
-func checkValidEmail(email string, dbStructure DBStructure) bool {
-	isEmailUnique := true
-	for _, user := range dbStructure.Users {
-		if user.Email == email {
-			isEmailUnique = false
-		}
-	}
-	return isEmailUnique
-}
-
-func (db *DB) GetUser(email string) (User, error) {
+func (db *DB) GetUser(id int) (User, error) {
 	dbStructure, err := db.loadDB()
 	if err != nil {
 		return User{}, err
 	}
 
-	user, ok := dbStructure.Users[email]
-	fmt.Println(email)
+	user, ok := dbStructure.Users[id]
 	if !ok {
 		return User{}, os.ErrNotExist
 	}
 
 	return user, nil
+}
+
+func (db *DB) GetUserByEmail(email string) (User, error) {
+	dbStructure, err := db.loadDB()
+	if err != nil {
+		return User{}, err
+	}
+
+	for _, user := range dbStructure.Users {
+		if user.Email == email {
+			return user, nil
+		}
+	}
+
+	return User{}, os.ErrNotExist
 }
