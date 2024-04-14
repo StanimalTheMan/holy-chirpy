@@ -39,6 +39,31 @@ func (db *DB) CreateUser(email, hashedPassword string) (User, error) {
 	return user, nil
 }
 
+func (db *DB) UpdateUser(userId int, email, hashedPassword string) (User, error) {
+	if _, err := db.GetUser(userId); errors.Is(err, os.ErrNotExist) {
+		return User{}, err
+	}
+
+	dbStructure, err := db.loadDB()
+	if err != nil {
+		return User{}, err
+	}
+
+	user := User{
+		ID:             userId,
+		Email:          email,
+		HashedPassword: hashedPassword,
+	}
+	dbStructure.Users[userId] = user
+
+	err = db.writeDB(dbStructure)
+	if err != nil {
+		return User{}, err
+	}
+
+	return user, nil
+}
+
 func (db *DB) GetUser(id int) (User, error) {
 	dbStructure, err := db.loadDB()
 	if err != nil {
