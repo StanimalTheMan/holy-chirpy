@@ -2,13 +2,10 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/StanimalTheMan/holy-chirpy/internal/auth"
-	"github.com/golang-jwt/jwt/v5"
 )
 
 func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
@@ -38,34 +35,28 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 
 	err = auth.CheckPasswordHash(params.Password, user.HashedPassword)
 	if err != nil {
-		respondWithError(w, http.StatusUnauthorized, "Unauthorized")
+		respondWithError(w, http.StatusUnauthorized, "Invalid password")
 		return
 	}
 
-	// Create a JWT
+	defaultExpiration := 60 * 60 * 24
+	if params.ExpiresInSeconds == 0 {
+		params.ExpiresInSeconds = defaultExpiration
+	} else if params.ExpiresInSeconds > defaultExpiration {
+		params.ExpiresInSeconds = defaultExpiration
+	}
 
-	// Create the Claims
-	currentTime := time.Now()
-	expirationTime := 24 * time.Hour
-	if params.ExpiresInSeconds > 0 && params.ExpiresInSeconds < int(time.Hour*24) {
-		// if client provides expires_in_seconds
-		expirationTime = time.Second * time.Duration(params.ExpiresInSeconds)
+	token, err := auth.MakeJWT(user.ID, cfg.jwtSecret, time.Duration(params.ExpiresInSeconds)*time.Second)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Couldn't create JWT")
+		return
 	}
-	claims := &jwt.RegisteredClaims{
-		Issuer:    "chirpy",
-		IssuedAt:  jwt.NewNumericDate(time.Now()),
-		ExpiresAt: jwt.NewNumericDate(currentTime.Add(expirationTime)),
-		Subject:   strconv.Itoa(user.ID),
-	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	ss, _ := token.SignedString([]byte(cfg.jwtSecret))
-	fmt.Println(ss)
 
 	respondWithJSON(w, http.StatusOK, response{
 		User: User{
 			ID:    user.ID,
 			Email: user.Email,
 		},
-		Token: ss,
+		Token: token,
 	})
 }
