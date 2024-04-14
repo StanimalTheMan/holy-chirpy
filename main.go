@@ -2,15 +2,19 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/StanimalTheMan/holy-chirpy/internal/database"
+	"github.com/joho/godotenv"
 )
 
 type apiConfig struct {
 	fileserverHits int
 	DB             *database.DB
+	jwtSecret      string
 }
 
 func main() {
@@ -31,9 +35,19 @@ func main() {
 		}
 	}
 
+	// Load environment variables from the .env file
+	if err := godotenv.Load(".env"); err != nil {
+		fmt.Println("Error loading .env file:", err)
+		return
+	}
+
+	// Get value of JWT Secret from .env file
+	jwtSecret := os.Getenv("JWT_SECRET")
+
 	apiCfg := apiConfig{
 		fileserverHits: 0,
 		DB:             db,
+		jwtSecret:      jwtSecret,
 	}
 
 	mux := http.NewServeMux()
