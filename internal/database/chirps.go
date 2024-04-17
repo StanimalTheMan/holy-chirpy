@@ -1,7 +1,6 @@
 package database
 
 import (
-	"errors"
 	"os"
 )
 
@@ -61,22 +60,13 @@ func (db *DB) GetChirp(id int) (Chirp, error) {
 	return chirp, nil
 }
 
-func (db *DB) DeleteChirp(chirpID, userID int) error {
+func (db *DB) DeleteChirp(id int) error {
 	dbStructure, err := db.loadDB()
 	if err != nil {
 		return err
 	}
 
-	chirp, ok := dbStructure.Chirps[chirpID]
-	if !ok {
-		return os.ErrNotExist
-	}
-
-	if chirp.AuthorID != userID {
-		return errors.New("id mismatch")
-	}
-
-	delete(dbStructure.Chirps, chirpID)
+	delete(dbStructure.Chirps, id)
 	err = db.writeDB(dbStructure)
 	if err != nil {
 		return err

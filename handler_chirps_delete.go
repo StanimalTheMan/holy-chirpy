@@ -1,9 +1,7 @@
 package main
 
 import (
-	"errors"
 	"net/http"
-	"os"
 	"strconv"
 
 	"github.com/StanimalTheMan/holy-chirpy/internal/auth"
@@ -23,7 +21,7 @@ func (cfg *apiConfig) handlerChirpsDelete(w http.ResponseWriter, r *http.Request
 		respondWithError(w, http.StatusUnauthorized, "Couldn't validate JWT")
 		return
 	}
-	userIDInt, err := strconv.Atoi(subject)
+	userID, err := strconv.Atoi(subject)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't parse user ID")
 		return
@@ -36,15 +34,20 @@ func (cfg *apiConfig) handlerChirpsDelete(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	err = cfg.DB.DeleteChirp(chirpID, userIDInt)
-	if errors.Is(err, os.ErrNotExist) {
-		respondWithError(w, http.StatusNotFound, "Chirp does not exist")
-		return
-	}
+	dbChirp, err := cfg.DB.GetChirp(chirpID)
 	if err != nil {
-		// user is not author of chirp
-		respondWithError(w, http.StatusForbidden, "Forbidden")
+		respondWithError(w, http.StatusNotFound, "Couldn't get chirp")
+	}
+	if dbChirp.AuthorID != userID {
+		respondWithError(w, http.StatusForbidden, "You can't delete this chirp")
 		return
 	}
-	respondWithJSON(w, 200, "Chirp successfully deleted")
+
+	err = cfg.DB.DeleteChirp(chirpID)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Couldn't delte chirp")
+		return
+	}
+
+	respondWithJSON(w, http.StatusOK, "Chirp successfully deleted")
 }
