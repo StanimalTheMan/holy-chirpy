@@ -74,6 +74,8 @@ func main() {
 
 	mux.HandleFunc("GET /admin/metrics", apiCfg.handlerMetrics)
 
+	mux.HandleFunc("POST /api/polka/webhooks", apiCfg.handlerUsersUpgrade)
+
 	corsMux := middlewareCors(mux)
 
 	server := &http.Server{
