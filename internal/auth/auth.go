@@ -3,7 +3,9 @@ package auth
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -132,4 +134,28 @@ func GetBearerToken(headers http.Header) (string, error) {
 	}
 
 	return splitAuth[1], nil
+}
+
+func ValidateAPIKey(headers http.Header) error {
+	authHeader := headers.Get("Authorization")
+	if authHeader == "" {
+		return ErrNoAuthHeaderIncluded
+	}
+	splitAuth := strings.Split(authHeader, " ")
+	fmt.Println(splitAuth)
+	if len(splitAuth) < 2 || splitAuth[0] != "ApiKey" {
+		return errors.New("malformed authorization header")
+	}
+
+	// Get value of ApiKey from .env file
+	polkaAPIKey := os.Getenv("POLKA_API_KEY")
+	if polkaAPIKey == "" {
+		log.Fatal("POLKA_API_KEY environment variable is not set")
+		return errors.New("POLKA_API_KEY environment variable is not set")
+	}
+	if polkaAPIKey != splitAuth[1] {
+		return errors.New("invalid API key")
+	}
+
+	return nil
 }

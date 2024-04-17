@@ -5,6 +5,8 @@ import (
 	"errors"
 	"net/http"
 	"os"
+
+	"github.com/StanimalTheMan/holy-chirpy/internal/auth"
 )
 
 func (cfg *apiConfig) handlerUsersUpgrade(w http.ResponseWriter, r *http.Request) {
@@ -17,9 +19,14 @@ func (cfg *apiConfig) handlerUsersUpgrade(w http.ResponseWriter, r *http.Request
 		Data  Data   `json:"data"`
 	}
 
+	err := auth.ValidateAPIKey(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Invalid api key")
+	}
+
 	decoder := json.NewDecoder(r.Body)
 	params := parameters{}
-	err := decoder.Decode(&params)
+	err = decoder.Decode(&params)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't decode parameters")
 		return
