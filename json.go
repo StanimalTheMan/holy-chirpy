@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 )
@@ -22,7 +21,6 @@ func respondWithError(w http.ResponseWriter, code int, msg string) {
 func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	// Encode JSON response body
 	w.Header().Set("Content-Type", "application/json")
-	fmt.Println(payload)
 	data, err := json.Marshal(payload)
 	if err != nil {
 		log.Printf("Error marshalling JSON: %s", err)

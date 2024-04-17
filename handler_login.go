@@ -12,7 +12,6 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
 		Password string `json:"password"`
 		Email    string `json:"email"`
-		// ExpiresInSeconds int    `json:"expires_in_seconds"`
 	}
 	type response struct {
 		User
@@ -40,22 +39,25 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	defaultAccessTokenExpiration := 60 * 60
-	defaultRefreshTokenExpiration := 60 * 60 * 24 * 60
-	// if params.ExpiresInSeconds == 0 {
-	// 	params.ExpiresInSeconds = defaultExpiration
-	// } else if params.ExpiresInSeconds > defaultExpiration {
-	// 	params.ExpiresInSeconds = defaultExpiration
-	// }
-
-	access_token, err := auth.MakeJWT(user.ID, "chirpy-access", cfg.jwtSecret, time.Duration(defaultAccessTokenExpiration)*time.Second)
+	accessToken, err := auth.MakeJWT(
+		user.ID,
+		cfg.jwtSecret,
+		time.Hour,
+		auth.TokenTypeAccess,
+	)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Couldn't create JWT")
+		respondWithError(w, http.StatusInternalServerError, "Couldn't create access JWT")
 		return
 	}
-	refresh_token, err := auth.MakeJWT(user.ID, "chirpy-refresh", cfg.jwtSecret, time.Duration(defaultRefreshTokenExpiration)*time.Second)
+
+	refreshToken, err := auth.MakeJWT(
+		user.ID,
+		cfg.jwtSecret,
+		time.Hour*24*30*6,
+		auth.TokenTypeRefresh,
+	)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Couldn't create JWT")
+		respondWithError(w, http.StatusInternalServerError, "Couldn't create refresh JWT")
 		return
 	}
 
@@ -64,7 +66,7 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 			ID:    user.ID,
 			Email: user.Email,
 		},
-		Token:        access_token,
-		RefreshToken: refresh_token,
+		Token:        accessToken,
+		RefreshToken: refreshToken,
 	})
 }

@@ -2,7 +2,6 @@ package database
 
 import (
 	"errors"
-	"os"
 )
 
 type User struct {
@@ -14,7 +13,7 @@ type User struct {
 var ErrAlreadyExists = errors.New("already exists")
 
 func (db *DB) CreateUser(email, hashedPassword string) (User, error) {
-	if _, err := db.GetUserByEmail(email); !errors.Is(err, os.ErrNotExist) {
+	if _, err := db.GetUserByEmail(email); !errors.Is(err, ErrNotExist) {
 		return User{}, err
 	}
 
@@ -47,7 +46,7 @@ func (db *DB) UpdateUser(id int, email, hashedPassword string) (User, error) {
 
 	user, ok := dbStructure.Users[id]
 	if !ok {
-		return User{}, os.ErrNotExist
+		return User{}, ErrNotExist
 	}
 
 	user.Email = email
@@ -70,7 +69,7 @@ func (db *DB) GetUser(id int) (User, error) {
 
 	user, ok := dbStructure.Users[id]
 	if !ok {
-		return User{}, os.ErrNotExist
+		return User{}, ErrNotExist
 	}
 
 	return user, nil
@@ -88,5 +87,5 @@ func (db *DB) GetUserByEmail(email string) (User, error) {
 		}
 	}
 
-	return User{}, os.ErrNotExist
+	return User{}, ErrNotExist
 }
