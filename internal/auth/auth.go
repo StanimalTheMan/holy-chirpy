@@ -52,6 +52,16 @@ func ValidateJWT(tokenString, tokenSecret string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	issuer, err := token.Claims.GetIssuer()
+	if err != nil {
+		return "", err
+	}
+
+	// Reject requests if access token in header is a refresh token (check issuer).
+	if issuer == "chirpy-refresh" {
+		fmt.Println("INVALID REFRESH", tokenString, token.Claims)
+		return "", errors.New("invalid token")
+	}
 
 	return userIDString, nil
 }
