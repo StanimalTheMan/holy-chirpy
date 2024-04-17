@@ -1,6 +1,9 @@
 package database
 
-import "os"
+import (
+	"errors"
+	"os"
+)
 
 type Chirp struct {
 	ID       int    `json:"id"`
@@ -56,4 +59,28 @@ func (db *DB) GetChirp(id int) (Chirp, error) {
 	}
 
 	return chirp, nil
+}
+
+func (db *DB) DeleteChirp(chirpID, userID int) error {
+	dbStructure, err := db.loadDB()
+	if err != nil {
+		return err
+	}
+
+	chirp, ok := dbStructure.Chirps[chirpID]
+	if !ok {
+		return os.ErrNotExist
+	}
+
+	if chirp.AuthorID != userID {
+		return errors.New("id mismatch")
+	}
+
+	delete(dbStructure.Chirps, chirpID)
+	err = db.writeDB(dbStructure)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
