@@ -6,10 +6,13 @@ This project aims to build a web server using Go and the standard library. Twitt
 
 ## How to use
 
-1.  Use Postman or some other http client
+1.  Download repo or git clone it.
+2.  [Install Go if you haven't](https://go.dev/doc/install)
+3.  Run web server by running: `go build -o out && ./out`
+4.  Use Postman or some other http client
 
-POST /api/users - create a new user by supplying ("email": "YOUR EMAIL", "password": "PASSWORD") in JSON body.
+`POST /api/users` - create a new user by supplying ("email": "YOUR EMAIL", "password": "PASSWORD") in JSON body.
 
-POST /api/login - using the same email and password, make request. Use access token from "token" in http response.
+`POST /api/login` - using the same email and password, make request. Use access token from "token" in http response.
 
-POST /api/chirps - test that only post that isn't flagged by OpenAI moderation is created by supplying {"body": "CONTENT"} in your JSON body. Set Authorization header using token from previous POST /api/login http response.
+`POST /api/chirps` - test that only post that isn't flagged by OpenAI moderation is created by supplying {"body": "CONTENT"} in your JSON body. Set Authorization header using token from previous POST /api/login http response.
