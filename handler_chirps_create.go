@@ -1,12 +1,16 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/StanimalTheMan/holy-chirpy/internal/auth"
+	"github.com/joho/godotenv"
 )
 
 type Chirp struct {
@@ -42,6 +46,83 @@ func (cfg *apiConfig) handlerChirpsCreate(w http.ResponseWriter, r *http.Request
 	err = decoder.Decode(&params)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't decode parameters")
+		return
+	}
+
+	url := "https://api.openai.com/v1/moderations"
+
+	type InputData struct {
+		Input string `json:"input"`
+	}
+	params = struct {
+		Body string `json:"body"`
+	}{
+		Body: params.Body,
+	}
+
+	inputData := InputData{
+		Input: params.Body,
+	}
+
+	jsonStr, err := json.Marshal(inputData)
+	if err != nil {
+		fmt.Println("Error marshaling JSON:", err)
+		return
+	}
+
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonStr))
+	if err != nil {
+		fmt.Println("Error creating request", err)
+		return
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	// Load environment variables from the .env file
+	if err := godotenv.Load(".env"); err != nil {
+		fmt.Println("Error loading .env file:", err)
+		return
+	}
+
+	// Get value of "OPENAI_API_KEY" environment variable from .env file
+	apiKey := os.Getenv("OPENAI_API_KEY")
+
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %v", apiKey))
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println("Error sending request:", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	fmt.Println("Response Status:", resp, err)
+
+	// body := make([]byte, 1024)
+	// _, err = resp.Body.Read(body)
+	// if err != nil {
+	// 	fmt.Println("Error reading response body:", err)
+	// 	return
+	// }
+	// fmt.Println("Response Body:", string(body))
+
+	var response struct {
+		ID      string `json:"id"`
+		Model   string `json:"model"`
+		Results []struct {
+			Flagged bool `json:"flagged"`
+		} `json:"results"`
+	}
+	err = json.NewDecoder(resp.Body).Decode(&response)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Error reading API response")
+		return
+	}
+
+	// Check if the content is flagged by OpenAI API
+	if len(response.Results) > 0 && response.Results[0].Flagged {
+		respondWithError(w, http.StatusBadRequest, "Content flagged by OpenAI")
 		return
 	}
 
