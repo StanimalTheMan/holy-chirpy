@@ -99,14 +99,6 @@ func (cfg *apiConfig) handlerChirpsCreate(w http.ResponseWriter, r *http.Request
 
 	fmt.Println("Response Status:", resp, err)
 
-	// body := make([]byte, 1024)
-	// _, err = resp.Body.Read(body)
-	// if err != nil {
-	// 	fmt.Println("Error reading response body:", err)
-	// 	return
-	// }
-	// fmt.Println("Response Body:", string(body))
-
 	var response struct {
 		ID      string `json:"id"`
 		Model   string `json:"model"`
